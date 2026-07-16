@@ -1,0 +1,316 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0033E0401FF441B5A74492BC /* WindowAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4422967C9628A30B8513B00B /* WindowAccessor.swift */; };
+		11B53EA8001DAFC851F2C6F0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C55546A954643CE58B2E73 /* AppDelegate.swift */; };
+		3B88FBFF12D9B3D400B03E7C /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5B9B4A3E7CC0FC8854EAD7E /* PreferencesView.swift */; };
+		5A09D2C60803F2D816BD1891 /* ResizeWidthMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1959D6E5F6318813D728AAE /* ResizeWidthMacApp.swift */; };
+		8E448B2BB4E05AFD1935E04A /* SnapActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28C1642B9CDD4D43D1CBCE46 /* SnapActions.swift */; };
+		91F09028584477F79EE7280D /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464D87EB798EA2A79D7505D2 /* HotkeyManager.swift */; };
+		99810209AD4FE3320BC122AD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 32BB636196F91ED59D7A4919 /* Assets.xcassets */; };
+		A06BDC0FCB2D7AE4ED9BDE58 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E5FBA6A29AEBDF749A97D05 /* Carbon.framework */; };
+		EAB6620250D2561926AFFA39 /* ScreenGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3531852F3A0DC2A303B63FB5 /* ScreenGeometry.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		21C55546A954643CE58B2E73 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		28C1642B9CDD4D43D1CBCE46 /* SnapActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapActions.swift; sourceTree = "<group>"; };
+		32BB636196F91ED59D7A4919 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		3531852F3A0DC2A303B63FB5 /* ScreenGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenGeometry.swift; sourceTree = "<group>"; };
+		4422967C9628A30B8513B00B /* WindowAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAccessor.swift; sourceTree = "<group>"; };
+		464D87EB798EA2A79D7505D2 /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+		6E5FBA6A29AEBDF749A97D05 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		A97C29AD63741CF438998CE6 /* ResizeWidthMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ResizeWidthMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5B9B4A3E7CC0FC8854EAD7E /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
+		C2E832810DD94AD7A5FA8C4A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D1959D6E5F6318813D728AAE /* ResizeWidthMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeWidthMacApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4F6F5CC3FCCF73F75AE9CCF4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A06BDC0FCB2D7AE4ED9BDE58 /* Carbon.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		095FEE2E633C50D24407F2D6 /* ResizeWidthMac */ = {
+			isa = PBXGroup;
+			children = (
+				C68ECD2878FB2156AFD4E36D /* App */,
+				7B695DEBC571F57471B47524 /* UI */,
+				56FF437C3595AA04784D1FDF /* Core */,
+				CF82560BC6ED1FD415B52D37 /* Resources */,
+				32BB636196F91ED59D7A4919 /* Assets.xcassets */,
+			);
+			path = ResizeWidthMac;
+			sourceTree = "<group>";
+		};
+		56FF437C3595AA04784D1FDF /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				464D87EB798EA2A79D7505D2 /* HotkeyManager.swift */,
+				4422967C9628A30B8513B00B /* WindowAccessor.swift */,
+				3531852F3A0DC2A303B63FB5 /* ScreenGeometry.swift */,
+				28C1642B9CDD4D43D1CBCE46 /* SnapActions.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		5928955287B8089ED2177128 = {
+			isa = PBXGroup;
+			children = (
+				095FEE2E633C50D24407F2D6 /* ResizeWidthMac */,
+				86024CAD1E83101D97359D73 /* Products */,
+				7A350400B49505F5E44DA4EE /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		7A350400B49505F5E44DA4EE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6E5FBA6A29AEBDF749A97D05 /* Carbon.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7B695DEBC571F57471B47524 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				B5B9B4A3E7CC0FC8854EAD7E /* PreferencesView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		86024CAD1E83101D97359D73 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A97C29AD63741CF438998CE6 /* ResizeWidthMac.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C68ECD2878FB2156AFD4E36D /* App */ = {
+			isa = PBXGroup;
+			children = (
+				D1959D6E5F6318813D728AAE /* ResizeWidthMacApp.swift */,
+				21C55546A954643CE58B2E73 /* AppDelegate.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		CF82560BC6ED1FD415B52D37 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				C2E832810DD94AD7A5FA8C4A /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		42AEFBAE01D2DFD981F7DA7D /* ResizeWidthMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 386E3ABE3710177500B055AB /* Build configuration list for PBXNativeTarget "ResizeWidthMac" */;
+			buildPhases = (
+				F2AB5FB218DA8B84623F4557 /* Sources */,
+				4F6F5CC3FCCF73F75AE9CCF4 /* Frameworks */,
+				55B558C7EF820E6E00E5993B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ResizeWidthMac;
+			productName = ResizeWidthMac;
+			productReference = A97C29AD63741CF438998CE6 /* ResizeWidthMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					42AEFBAE01D2DFD981F7DA7D = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = A6392603704BC67DABF5ACDA /* Build configuration list for PBXProject "ResizeWidthMac" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 5928955287B8089ED2177128;
+			productRefGroup = 86024CAD1E83101D97359D73 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				42AEFBAE01D2DFD981F7DA7D /* ResizeWidthMac */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		55B558C7EF820E6E00E5993B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				99810209AD4FE3320BC122AD /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F2AB5FB218DA8B84623F4557 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5A09D2C60803F2D816BD1891 /* ResizeWidthMacApp.swift in Sources */,
+				11B53EA8001DAFC851F2C6F0 /* AppDelegate.swift in Sources */,
+				3B88FBFF12D9B3D400B03E7C /* PreferencesView.swift in Sources */,
+				91F09028584477F79EE7280D /* HotkeyManager.swift in Sources */,
+				0033E0401FF441B5A74492BC /* WindowAccessor.swift in Sources */,
+				EAB6620250D2561926AFFA39 /* ScreenGeometry.swift in Sources */,
+				8E448B2BB4E05AFD1935E04A /* SnapActions.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		12653BB3A8FD0E8749A549D2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TGBY97T2J4;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = TGBY97T2J4;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ResizeWidthMac/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.local.ResizeWidthMac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		71307F56FE0F050CBFE8BD6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		89DC1C44C857E7A88B9FADAA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TGBY97T2J4;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = TGBY97T2J4;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ResizeWidthMac/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.local.ResizeWidthMac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		D4147F9DEB4AD84BF3A14790 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		386E3ABE3710177500B055AB /* Build configuration list for PBXNativeTarget "ResizeWidthMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				12653BB3A8FD0E8749A549D2 /* Debug */,
+				89DC1C44C857E7A88B9FADAA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A6392603704BC67DABF5ACDA /* Build configuration list for PBXProject "ResizeWidthMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71307F56FE0F050CBFE8BD6D /* Debug */,
+				D4147F9DEB4AD84BF3A14790 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+}
