@@ -35,6 +35,8 @@ struct PreferencesView: View {
     private let shortcuts: [(keys: String, meaning: String)] = [
         ("⇧⌃↑", "Full ↔ top ½"),
         ("⇧⌃↓", "Bottom ½"),
+        ("⌥⌘←", "Left 50% → 75% → 33% → …"),
+        ("⌥⌘→", "Right 50% → 75% → 33% → …"),
         ("⇧⌥⌘→", "Span into matching twin on the right (full height)"),
         ("⇧⌥⌘←", "Span into matching twin on the left (full height)"),
         ("⇧⌥⌘↑", "Span into matching twin (top ½)"),

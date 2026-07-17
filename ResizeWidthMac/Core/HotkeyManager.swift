@@ -18,6 +18,8 @@ final class HotkeyManager {
         case moveDisplayLeft = 6
         case spanHalfUp = 7
         case spanHalfDown = 8
+        case halfLeft = 9
+        case halfRight = 10
 
         var action: SnapAction {
             switch self {
@@ -29,6 +31,8 @@ final class HotkeyManager {
             case .moveDisplayLeft: return .moveDisplayLeft
             case .spanHalfUp: return .spanHalfUp
             case .spanHalfDown: return .spanHalfDown
+            case .halfLeft: return .halfLeft
+            case .halfRight: return .halfRight
             }
         }
 
@@ -45,6 +49,9 @@ final class HotkeyManager {
         // Shift+Control+Up / Down
         register(id: .verticalUp, keyCode: UInt32(kVK_UpArrow), modifiers: UInt32(shiftKey | controlKey))
         register(id: .verticalDown, keyCode: UInt32(kVK_DownArrow), modifiers: UInt32(shiftKey | controlKey))
+        // Option+Command+Left / Right — cycle left/right width 50% → 75% → 33%
+        register(id: .halfLeft, keyCode: UInt32(kVK_LeftArrow), modifiers: UInt32(optionKey | cmdKey))
+        register(id: .halfRight, keyCode: UInt32(kVK_RightArrow), modifiers: UInt32(optionKey | cmdKey))
         // Shift+Option+Command+Right / Left — span across displays
         register(id: .spanRight, keyCode: UInt32(kVK_RightArrow), modifiers: UInt32(shiftKey | optionKey | cmdKey))
         register(id: .spanLeft, keyCode: UInt32(kVK_LeftArrow), modifiers: UInt32(shiftKey | optionKey | cmdKey))

@@ -8,6 +8,8 @@ enum SnapAction {
     case spanLeft
     case spanHalfUp
     case spanHalfDown
+    case halfLeft
+    case halfRight
     case moveDisplayRight
     case moveDisplayLeft
 }
@@ -15,6 +17,11 @@ enum SnapAction {
 @MainActor
 final class SnapActions {
     private let tolerance: CGFloat = 16
+    /// ⌥⌘←/→ cycle: 50% → 75% → 33% → 50%…
+    private let sideWidthPercents: [CGFloat] = [50, 75, 100.0 / 3.0]
+    /// Live frame after the last 100% span (AX often clamps under the menu bar).
+    private var lastFullSpanFrameRight: CGRect?
+    private var lastFullSpanFrameLeft: CGRect?
 
     func perform(_ action: SnapAction) {
         guard WindowAccessor.isTrusted(),
@@ -37,6 +44,10 @@ final class SnapActions {
             spanHalf(window: window, current: current, occupyTop: true)
         case .spanHalfDown:
             spanHalf(window: window, current: current, occupyTop: false)
+        case .halfLeft:
+            snapHorizontalSide(window: window, current: current, screen: screen, toLeft: true)
+        case .halfRight:
+            snapHorizontalSide(window: window, current: current, screen: screen, toLeft: false)
         case .moveDisplayRight:
             moveToAdjacentDisplay(window: window, current: current, screen: screen, moveRight: true)
         case .moveDisplayLeft:
@@ -71,6 +82,36 @@ final class SnapActions {
         _ = WindowAccessor.setFrame(bottomHalf, of: window)
     }
 
+    // MARK: - Horizontal side cycle (50% → 75% → 33%)
+
+    /// ⌥⌘←/→ — pin to left/right edge at full height; cycle width 50% → 75% → 33% → 50%…
+    private func snapHorizontalSide(
+        window: AXUIElement,
+        current: CGRect,
+        screen: NSScreen,
+        toLeft: Bool
+    ) {
+        let full = screen.frame
+        var currentIndex: Int?
+        for (index, percent) in sideWidthPercents.enumerated() {
+            let candidate = sideRect(on: full, percent: percent, toLeft: toLeft)
+            if ScreenGeometry.isApproximatelyEqual(current, candidate, tolerance: tolerance) {
+                currentIndex = index
+                break
+            }
+        }
+
+        let nextIndex = currentIndex.map { ($0 + 1) % sideWidthPercents.count } ?? 0
+        let next = sideRect(on: full, percent: sideWidthPercents[nextIndex], toLeft: toLeft)
+        _ = WindowAccessor.setFrame(next, of: window)
+    }
+
+    private func sideRect(on full: CGRect, percent: CGFloat, toLeft: Bool) -> CGRect {
+        let width = full.width * percent / 100
+        let originX = toLeft ? full.minX : (full.maxX - width)
+        return CGRect(x: originX, y: full.minY, width: width, height: full.height)
+    }
+
     // MARK: - Span across nearby display (full height)
 
     private func span(window: AXUIElement, current: CGRect, extendRight: Bool) {
@@ -88,19 +129,26 @@ final class SnapActions {
         let originY = mon.minY
 
         let expectedFullW = monW + adjMonW
-        let isFull: Bool
+        let matchesIdealFull: Bool
         if extendRight {
-            isFull = abs(current.minX - mon.minX) <= tolerance
+            matchesIdealFull = abs(current.minX - mon.minX) <= tolerance
                 && abs(current.minY - originY) <= tolerance
                 && abs(current.width - expectedFullW) <= tolerance
                 && abs(current.height - height) <= tolerance
         } else {
             let expectedFullL = mon.minX - adjMonW
-            isFull = abs(current.minX - expectedFullL) <= tolerance
+            matchesIdealFull = abs(current.minX - expectedFullL) <= tolerance
                 && abs(current.minY - originY) <= tolerance
                 && abs(current.width - expectedFullW) <= tolerance
                 && abs(current.height - height) <= tolerance
         }
+
+        // Prefer the last applied full frame — ideal geometry often misses menu-bar clamp.
+        let savedFull = extendRight ? lastFullSpanFrameRight : lastFullSpanFrameLeft
+        let matchesSavedFull = savedFull.map {
+            ScreenGeometry.isApproximatelyEqual(current, $0, tolerance: tolerance)
+        } ?? false
+        let isFull = matchesIdealFull || matchesSavedFull
 
         let reducedPercent: CGFloat = extendRight ? 80 : 50
         let percentOfAdj: CGFloat = isFull ? reducedPercent : 100
@@ -111,6 +159,14 @@ final class SnapActions {
 
         let rect = CGRect(x: originX, y: originY, width: width, height: height)
         _ = WindowAccessor.setFrame(rect, of: window)
+
+        if percentOfAdj == 100, let actual = WindowAccessor.frame(of: window) {
+            if extendRight {
+                lastFullSpanFrameRight = actual
+            } else {
+                lastFullSpanFrameLeft = actual
+            }
+        }
     }
 
     // MARK: - Span twin display at top/bottom half
