@@ -1,5 +1,50 @@
 import AppKit
+import CoreServices
+import ServiceManagement
 import SwiftUI
+
+enum LaunchAtLogin {
+    private static let bootstrappedKey = "LaunchAtLogin.bootstrapped"
+
+    static var isEnabled: Bool {
+        SMAppService.mainApp.status == .enabled
+    }
+
+    static var requiresApproval: Bool {
+        SMAppService.mainApp.status == .requiresApproval
+    }
+
+    static func setEnabled(_ enabled: Bool) throws {
+        if enabled {
+            try SMAppService.mainApp.register()
+        } else {
+            try SMAppService.mainApp.unregister()
+        }
+    }
+
+    /// First run only: register so the app comes back after restart.
+    static func bootstrapIfNeeded() {
+        guard !UserDefaults.standard.bool(forKey: bootstrappedKey) else { return }
+        UserDefaults.standard.set(true, forKey: bootstrappedKey)
+        guard SMAppService.mainApp.status == .notRegistered else { return }
+        try? SMAppService.mainApp.register()
+    }
+
+    static var launchedAsLoginItem: Bool {
+        guard let event = NSAppleEventManager.shared().currentAppleEvent,
+              event.eventID == AEEventID(kAEOpenApplication),
+              let props = event.paramDescriptor(forKeyword: AEKeyword(keyAEPropData)) else {
+            return false
+        }
+        return props.enumCodeValue == AEEventID(keyAELaunchedAsLogInItem)
+    }
+
+    static func openLoginItemsSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+}
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -22,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         NSApp.setActivationPolicy(.regular)
+        LaunchAtLogin.bootstrapIfNeeded()
         permissionState.refresh()
         hotkeyManager.onAction = { [weak self] action in
             Task { @MainActor in
@@ -29,6 +75,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         hotkeyManager.registerDefaults()
+
+        // Login launch: stay in Dock with hotkeys, don't steal focus.
+        if LaunchAtLogin.launchedAsLoginItem {
+            DispatchQueue.main.async {
+                for window in NSApp.windows {
+                    window.orderOut(nil)
+                }
+            }
+            return
+        }
 
         // Do not create a second preferences window here — SwiftUI `Window` already owns it.
         DispatchQueue.main.async {

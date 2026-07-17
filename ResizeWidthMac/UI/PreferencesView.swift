@@ -31,6 +31,8 @@ final class PermissionState: ObservableObject {
 
 struct PreferencesView: View {
     @EnvironmentObject private var permissionState: PermissionState
+    @State private var openAtLogin = LaunchAtLogin.isEnabled
+    @State private var loginNeedsApproval = LaunchAtLogin.requiresApproval
 
     private let shortcuts: [(keys: String, meaning: String)] = [
         ("⇧⌃↑", "Full ↔ top ½"),
@@ -71,6 +73,32 @@ struct PreferencesView: View {
 
             Divider()
 
+            Toggle("Open at Login", isOn: Binding(
+                get: { openAtLogin },
+                set: { newValue in
+                    do {
+                        try LaunchAtLogin.setEnabled(newValue)
+                    } catch {
+                        NSLog("ResizeWidthMac: launch-at-login error: %@", error.localizedDescription)
+                    }
+                    refreshLoginState()
+                }
+            ))
+            .font(.system(size: 12))
+            .toggleStyle(.switch)
+
+            if loginNeedsApproval {
+                HStack(spacing: 8) {
+                    Text("Allow ResizeWidthMac in Login Items to start after restart.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Open Login Items") {
+                        LaunchAtLogin.openLoginItemsSettings()
+                    }
+                }
+            }
+
             HStack(spacing: 10) {
                 Circle()
                     .fill(permissionState.isTrusted ? Color.green.opacity(0.85) : Color.orange.opacity(0.9))
@@ -110,12 +138,21 @@ struct PreferencesView: View {
         }
         .padding(20)
         .frame(width: 380, alignment: .topLeading)
-        .onAppear { permissionState.refresh() }
+        .onAppear {
+            permissionState.refresh()
+            refreshLoginState()
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             permissionState.refresh()
+            refreshLoginState()
         }
         .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { _ in
             permissionState.refresh()
         }
+    }
+
+    private func refreshLoginState() {
+        openAtLogin = LaunchAtLogin.isEnabled
+        loginNeedsApproval = LaunchAtLogin.requiresApproval
     }
 }
