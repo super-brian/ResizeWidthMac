@@ -6,6 +6,8 @@ enum SnapAction {
     case verticalDown
     case spanRight
     case spanLeft
+    case spanHalfUp
+    case spanHalfDown
     case moveDisplayRight
     case moveDisplayLeft
 }
@@ -24,13 +26,17 @@ final class SnapActions {
 
         switch action {
         case .verticalUp:
-            snapVertical(window: window, current: current, screen: screen, snapTop: true)
+            snapVerticalUp(window: window, current: current, screen: screen)
         case .verticalDown:
-            snapVertical(window: window, current: current, screen: screen, snapTop: false)
+            snapVerticalDown(window: window, current: current, screen: screen)
         case .spanRight:
             span(window: window, current: current, extendRight: true)
         case .spanLeft:
             span(window: window, current: current, extendRight: false)
+        case .spanHalfUp:
+            spanHalf(window: window, current: current, occupyTop: true)
+        case .spanHalfDown:
+            spanHalf(window: window, current: current, occupyTop: false)
         case .moveDisplayRight:
             moveToAdjacentDisplay(window: window, current: current, screen: screen, moveRight: true)
         case .moveDisplayLeft:
@@ -38,75 +44,34 @@ final class SnapActions {
         }
     }
 
-    // MARK: - Vertical (Win+Up / Win+Down)
+    // MARK: - Vertical
 
-    private func snapVertical(window: AXUIElement, current: CGRect, screen: NSScreen, snapTop: Bool) {
-        let work = screen.visibleFrame
-        let workH = work.height
-        let halfH = workH / 2
-        let twoThirdsH = workH * 2 / 3
-        let isMaximized = ScreenGeometry.isApproximatelyEqual(current, work, tolerance: tolerance)
+    /// ⇧⌃↑ — cycle full display ↔ top 50%.
+    private func snapVerticalUp(window: AXUIElement, current: CGRect, screen: NSScreen) {
+        let full = screen.frame
+        let halfH = full.height / 2
+        let isFull = ScreenGeometry.isApproximatelyEqual(current, full, tolerance: tolerance)
+        let topHalf = CGRect(x: full.minX, y: full.maxY - halfH, width: full.width, height: halfH)
+        let isTopHalf = ScreenGeometry.isApproximatelyEqual(current, topHalf, tolerance: tolerance)
 
-        if snapTop {
-            // max -> top 2/3 -> top 50% -> max -> ...
-            if isMaximized {
-                let rect = CGRect(
-                    x: work.minX,
-                    y: work.maxY - twoThirdsH,
-                    width: work.width,
-                    height: twoThirdsH
-                )
-                _ = WindowAccessor.setFrame(rect, of: window)
-                return
-            }
-
-            let topAligned = abs(current.maxY - work.maxY) <= tolerance
-            let isTopTwoThirds = topAligned && abs(current.height - twoThirdsH) <= tolerance
-
-            if isTopTwoThirds {
-                let rect = CGRect(
-                    x: work.minX,
-                    y: work.maxY - halfH,
-                    width: work.width,
-                    height: halfH
-                )
-                _ = WindowAccessor.setFrame(rect, of: window)
-            } else {
-                // From top half or anything else -> maximize
-                _ = WindowAccessor.setFrame(work, of: window)
-            }
-            return
-        }
-
-        // max -> bottom 2/3 -> bottom 50% -> max -> ...
-        if isMaximized {
-            let rect = CGRect(
-                x: work.minX,
-                y: work.minY,
-                width: work.width,
-                height: twoThirdsH
-            )
-            _ = WindowAccessor.setFrame(rect, of: window)
-            return
-        }
-
-        let bottomAligned = abs(current.minY - work.minY) <= tolerance
-        let isBottomTwoThirds = bottomAligned && abs(current.height - twoThirdsH) <= tolerance
-
-        if isBottomTwoThirds {
-            let rect = CGRect(
-                x: work.minX,
-                y: work.minY,
-                width: work.width,
-                height: halfH
-            )
-            _ = WindowAccessor.setFrame(rect, of: window)
+        if isFull {
+            _ = WindowAccessor.setFrame(topHalf, of: window)
+        } else if isTopHalf {
+            _ = WindowAccessor.setFrame(full, of: window)
         } else {
-            _ = WindowAccessor.setFrame(work, of: window)
+            _ = WindowAccessor.setFrame(full, of: window)
         }
     }
 
-    // MARK: - Span across nearby display
+    /// ⇧⌃↓ — always bottom 50% (no cycle).
+    private func snapVerticalDown(window: AXUIElement, current: CGRect, screen: NSScreen) {
+        let full = screen.frame
+        let halfH = full.height / 2
+        let bottomHalf = CGRect(x: full.minX, y: full.minY, width: full.width, height: halfH)
+        _ = WindowAccessor.setFrame(bottomHalf, of: window)
+    }
+
+    // MARK: - Span across nearby display (full height)
 
     private func span(window: AXUIElement, current: CGRect, extendRight: Bool) {
         // Anchor on the leading edge so a full two-monitor span does not re-home
@@ -117,23 +82,24 @@ final class SnapActions {
         }
 
         let mon = screen.frame
-        let work = screen.visibleFrame
         let monW = mon.width
         let adjMonW = adjacent.frame.width
+        let height = mon.height
+        let originY = mon.minY
 
         let expectedFullW = monW + adjMonW
         let isFull: Bool
         if extendRight {
             isFull = abs(current.minX - mon.minX) <= tolerance
-                && abs(current.maxY - work.maxY) <= tolerance
+                && abs(current.minY - originY) <= tolerance
                 && abs(current.width - expectedFullW) <= tolerance
-                && abs(current.height - work.height) <= tolerance
+                && abs(current.height - height) <= tolerance
         } else {
             let expectedFullL = mon.minX - adjMonW
             isFull = abs(current.minX - expectedFullL) <= tolerance
-                && abs(current.maxY - work.maxY) <= tolerance
+                && abs(current.minY - originY) <= tolerance
                 && abs(current.width - expectedFullW) <= tolerance
-                && abs(current.height - work.height) <= tolerance
+                && abs(current.height - height) <= tolerance
         }
 
         let reducedPercent: CGFloat = extendRight ? 80 : 50
@@ -141,9 +107,28 @@ final class SnapActions {
         let extend = adjMonW * percentOfAdj / 100
 
         let width = monW + extend
-        let height = work.height
-        let originY = work.maxY - height
         let originX = extendRight ? mon.minX : (mon.minX - extend)
+
+        let rect = CGRect(x: originX, y: originY, width: width, height: height)
+        _ = WindowAccessor.setFrame(rect, of: window)
+    }
+
+    // MARK: - Span twin display at top/bottom half
+
+    /// ⇧⌥⌘↑/↓ — extend into a matching left/right twin display (same size & orientation,
+    /// shared edge >95%) and occupy the top or bottom 50% of the combined span.
+    private func spanHalf(window: AXUIElement, current: CGRect, occupyTop: Bool) {
+        guard let screen = ScreenGeometry.screenContaining(cocoaRect: current),
+              let match = ScreenGeometry.bestAdjacentTwin(to: screen, windowRect: current) else {
+            return
+        }
+
+        let mon = screen.frame
+        let adjW = match.screen.frame.width
+        let width = mon.width + adjW
+        let height = mon.height / 2
+        let originX = match.extendRight ? mon.minX : (mon.minX - adjW)
+        let originY = occupyTop ? (mon.maxY - height) : mon.minY
 
         let rect = CGRect(x: originX, y: originY, width: width, height: height)
         _ = WindowAccessor.setFrame(rect, of: window)
@@ -161,10 +146,10 @@ final class SnapActions {
             return
         }
 
-        let src = screen.visibleFrame
-        let dst = destination.visibleFrame
+        let src = screen.frame
+        let dst = destination.frame
 
-        // If maximized (or nearly filling work area), fill the destination work area.
+        // If maximized (or nearly filling the display), fill the destination display.
         if ScreenGeometry.isApproximatelyEqual(current, src, tolerance: tolerance) {
             _ = WindowAccessor.setFrame(dst, of: window)
             return
@@ -173,7 +158,7 @@ final class SnapActions {
         let width = min(current.width, dst.width)
         let height = min(current.height, dst.height)
 
-        // Keep relative position within the work area when possible.
+        // Keep relative position within the display when possible.
         let relX: CGFloat
         if src.width > width {
             relX = (current.minX - src.minX) / (src.width - width)

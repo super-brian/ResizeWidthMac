@@ -24,8 +24,6 @@
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
-	<key>LSUIElement</key>
-	<true/>
 	<key>NSAccessibilityUsageDescription</key>
 	<string>ResizeWidthMac needs Accessibility access to move and resize the frontmost window with keyboard shortcuts.</string>
 	<key>NSPrincipalClass</key>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1600"
+   LastUpgradeVersion = "2660"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -21,6 +21,24 @@
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Symlink App in Downloads"
+               scriptText = "set -euo pipefail&#10;SRCROOT_DIR=&quot;${PROJECT_DIR:-${SRCROOT}}&quot;&#10;bash &quot;${SRCROOT_DIR}/scripts/symlink-app-to-downloads.sh&quot;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "42AEFBAE01D2DFD981F7DA7D"
+                     BuildableName = "ResizeWidthMac.app"
+                     BlueprintName = "ResizeWidthMac"
+                     ReferencedContainer = "container:ResizeWidthMac.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"

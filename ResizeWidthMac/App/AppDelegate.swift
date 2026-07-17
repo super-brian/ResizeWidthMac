@@ -3,13 +3,25 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private static let activateExistingNotification = Notification.Name("com.local.ResizeWidthMac.activateExisting")
+
     let permissionState = PermissionState()
-    private var prefsWindow: NSWindow?
     private let hotkeyManager = HotkeyManager()
     private let snapActions = SnapActions()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        if activateExistingInstanceIfNeeded() {
+            return
+        }
+
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleActivateExistingNotification(_:)),
+            name: Self.activateExistingNotification,
+            object: nil
+        )
+
+        NSApp.setActivationPolicy(.regular)
         permissionState.refresh()
         hotkeyManager.onAction = { [weak self] action in
             Task { @MainActor in
@@ -17,11 +29,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         hotkeyManager.registerDefaults()
-        showPreferences()
+
+        // Do not create a second preferences window here — SwiftUI `Window` already owns it.
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+            Self.orderFrontMainWindow()
+        }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        DistributedNotificationCenter.default().removeObserver(self)
+        hotkeyManager.unregisterAll()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // Keep hotkeys alive when the preferences window is closed; Dock icon stays.
         false
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showPreferences()
+        return true
+    }
+
+    /// If another ResizeWidthMac is already running, activate it and quit this process.
+    private func activateExistingInstanceIfNeeded() -> Bool {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return false }
+        let myPID = ProcessInfo.processInfo.processIdentifier
+
+        let others = NSWorkspace.shared.runningApplications.filter {
+            $0.bundleIdentifier == bundleID && $0.processIdentifier != myPID
+        }
+        guard let existing = others.first else { return false }
+
+        DistributedNotificationCenter.default().postNotificationName(
+            Self.activateExistingNotification,
+            object: nil,
+            userInfo: nil,
+            deliverImmediately: true
+        )
+        existing.activate(options: [.activateIgnoringOtherApps])
+        NSApp.terminate(nil)
+        return true
+    }
+
+    @objc private func handleActivateExistingNotification(_ notification: Notification) {
+        showPreferences()
     }
 
     private func handle(_ action: SnapAction) {
@@ -35,32 +88,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showPreferences() {
         permissionState.refresh()
-
-        if prefsWindow == nil {
-            let root = PreferencesView()
-                .environmentObject(permissionState)
-            let hosting = NSHostingController(rootView: root)
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 400, height: 400),
-                styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                backing: .buffered,
-                defer: false
-            )
-            window.title = "ResizeWidthMac"
-            window.contentViewController = hosting
-            window.setContentSize(NSSize(width: 400, height: 400))
-            window.contentMinSize = NSSize(width: 380, height: 360)
-            window.isReleasedWhenClosed = false
-            window.center()
-            prefsWindow = window
-        } else {
-            // Hosting controller keeps the old view if we only created once;
-            // refresh size in case an older short window is still around.
-            prefsWindow?.setContentSize(NSSize(width: 400, height: 400))
-        }
-
-        prefsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        Self.orderFrontMainWindow()
+    }
+
+    /// Bring the SwiftUI main window forward if it exists.
+    private static func orderFrontMainWindow() {
+        let candidates = NSApp.windows.filter { window in
+            window.canBecomeKey || window.canBecomeMain
+        }
+        guard let existing = candidates.first else { return }
+        if existing.isMiniaturized {
+            existing.deminiaturize(nil)
+        }
+        existing.makeKeyAndOrderFront(nil)
     }
 
     @objc func quitApp() {

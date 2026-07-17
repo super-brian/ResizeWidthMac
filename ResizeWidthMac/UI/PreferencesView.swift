@@ -33,10 +33,12 @@ struct PreferencesView: View {
     @EnvironmentObject private var permissionState: PermissionState
 
     private let shortcuts: [(keys: String, meaning: String)] = [
-        ("⇧⌃↑", "Maximize → top ⅔ → top ½"),
-        ("⇧⌃↓", "Maximize → bottom ⅔ → bottom ½"),
-        ("⇧⌥⌘→", "Span into display on the right"),
-        ("⇧⌥⌘←", "Span into display on the left"),
+        ("⇧⌃↑", "Full ↔ top ½"),
+        ("⇧⌃↓", "Bottom ½"),
+        ("⇧⌥⌘→", "Span into matching twin on the right (full height)"),
+        ("⇧⌥⌘←", "Span into matching twin on the left (full height)"),
+        ("⇧⌥⌘↑", "Span into matching twin (top ½)"),
+        ("⇧⌥⌘↓", "Span into matching twin (bottom ½)"),
         ("⇧⌃→", "Cycle window to the next display"),
         ("⇧⌃←", "Cycle window to the previous display"),
     ]

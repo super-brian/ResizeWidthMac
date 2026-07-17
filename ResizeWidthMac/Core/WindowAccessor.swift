@@ -56,13 +56,12 @@ enum WindowAccessor {
         var sizeValue = size
         guard let sizeRef = AXValueCreate(.cgSize, &sizeValue) else { return false }
 
-        let posErr = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posRef)
-        let sizeErr = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeRef)
-        // Some apps need size then position; retry position after size.
-        if posErr != .success || sizeErr != .success {
-            _ = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeRef)
-            _ = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posRef)
-        }
+        // size → position → size → position: reliable when moving across displays
+        // and for apps that clamp an intermediate frame.
+        _ = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeRef)
+        _ = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posRef)
+        _ = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeRef)
+        _ = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posRef)
         return true
     }
 
