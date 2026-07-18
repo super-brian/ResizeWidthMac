@@ -46,6 +46,94 @@ enum LaunchAtLogin {
     }
 }
 
+/// Stable `/Applications` symlink created by the Xcode build post-action.
+enum ApplicationsLaunch {
+    static let applicationsAppPath = "/Applications/ResizeWidthMac.app"
+    static let fromApplicationsArgument = "--from-applications-link"
+
+    static var applicationsAppURL: URL {
+        URL(fileURLWithPath: applicationsAppPath)
+    }
+
+    static var launchedFromApplicationsLink: Bool {
+        CommandLine.arguments.contains(fromApplicationsArgument)
+    }
+
+    static var resolvedSymlinkTarget: URL? {
+        let path = applicationsAppPath
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir) else {
+            return nil
+        }
+        if let dest = try? FileManager.default.destinationOfSymbolicLink(atPath: path) {
+            return URL(fileURLWithPath: dest).resolvingSymlinksInPath()
+        }
+        return URL(fileURLWithPath: path).resolvingSymlinksInPath()
+    }
+
+    static var thisBuildURL: URL {
+        Bundle.main.bundleURL.resolvingSymlinksInPath()
+    }
+
+    static var symlinkPointsAtThisBuild: Bool {
+        guard let target = resolvedSymlinkTarget else { return false }
+        return target.path == thisBuildURL.path
+    }
+
+    /// Relaunch through the Applications symlink so Login Items use a stable path.
+    /// Bundle paths resolve through the symlink to DerivedData, so we use a launch arg
+    /// (and skip relaunch for login-item starts / Xcode DEBUG runs).
+    @MainActor
+    static func relaunchViaApplicationsIfNeeded() -> Bool {
+        #if DEBUG
+        // Keep the Xcode-launched process so the debugger stays attached.
+        return false
+        #else
+        if launchedFromApplicationsLink || LaunchAtLogin.launchedAsLoginItem {
+            return false
+        }
+        guard symlinkPointsAtThisBuild else { return false }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = [
+            "-c",
+            "sleep 0.45; /usr/bin/open '\(applicationsAppPath)' --args \(fromApplicationsArgument)"
+        ]
+        do {
+            try process.run()
+            NSApp.terminate(nil)
+            return true
+        } catch {
+            NSLog("ResizeWidthMac: failed to relaunch via Applications: %@", error.localizedDescription)
+            return false
+        }
+        #endif
+    }
+
+    static var userFacingWarning: String? {
+        if launchedFromApplicationsLink || LaunchAtLogin.launchedAsLoginItem {
+            return nil
+        }
+        #if DEBUG
+        if Bundle.main.bundlePath.contains("DerivedData")
+            || Bundle.main.bundlePath.contains("/Build/Products/") {
+            // Informational only — DEBUG does not auto-relaunch.
+            if symlinkPointsAtThisBuild {
+                return "Running from Xcode (debugger). /Applications/ResizeWidthMac.app still points at this build for Login Items."
+            }
+        }
+        #endif
+        if symlinkPointsAtThisBuild {
+            return nil
+        }
+        if resolvedSymlinkTarget == nil {
+            return "Missing /Applications/ResizeWidthMac.app symlink. Build the app once so Login Items can use a stable path."
+        }
+        return "/Applications/ResizeWidthMac.app points at a different build. Rebuild to refresh the symlink, then reopen from Applications."
+    }
+}
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private static let activateExistingNotification = Notification.Name("com.local.ResizeWidthMac.activateExisting")
@@ -55,7 +143,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let snapActions = SnapActions()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if activateExistingInstanceIfNeeded() {
+        if ApplicationsLaunch.relaunchViaApplicationsIfNeeded() {
+            return
+        }
+
+        // Prefer this Applications-linked instance over an older one still running.
+        if ApplicationsLaunch.launchedFromApplicationsLink {
+            terminateOtherInstances()
+        } else if activateExistingInstanceIfNeeded() {
             return
         }
 
@@ -110,13 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// If another ResizeWidthMac is already running, activate it and quit this process.
     private func activateExistingInstanceIfNeeded() -> Bool {
-        guard let bundleID = Bundle.main.bundleIdentifier else { return false }
-        let myPID = ProcessInfo.processInfo.processIdentifier
-
-        let others = NSWorkspace.shared.runningApplications.filter {
-            $0.bundleIdentifier == bundleID && $0.processIdentifier != myPID
-        }
-        guard let existing = others.first else { return false }
+        guard let existing = otherInstances().first else { return false }
 
         DistributedNotificationCenter.default().postNotificationName(
             Self.activateExistingNotification,
@@ -127,6 +216,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         existing.activate(options: [.activateIgnoringOtherApps])
         NSApp.terminate(nil)
         return true
+    }
+
+    private func terminateOtherInstances() {
+        for app in otherInstances() {
+            app.terminate()
+        }
+    }
+
+    private func otherInstances() -> [NSRunningApplication] {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return [] }
+        let myPID = ProcessInfo.processInfo.processIdentifier
+        return NSWorkspace.shared.runningApplications.filter {
+            $0.bundleIdentifier == bundleID && $0.processIdentifier != myPID
+        }
     }
 
     @objc private func handleActivateExistingNotification(_ notification: Notification) {
@@ -158,10 +261,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             existing.deminiaturize(nil)
         }
         existing.makeKeyAndOrderFront(nil)
-    }
-
-    @objc func quitApp() {
-        hotkeyManager.unregisterAll()
-        NSApp.terminate(nil)
     }
 }

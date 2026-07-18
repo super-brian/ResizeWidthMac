@@ -1,40 +1,34 @@
 import AppKit
 import ApplicationServices
+import CoreGraphics
 
 enum WindowAccessor {
+    private static let axWindowNumberAttribute = "AXWindowNumber" as CFString
+
     static func isTrusted() -> Bool {
         AXIsProcessTrusted()
     }
 
-    /// Frontmost app's focused window, excluding our own process.
+    /// Focused window of the frontmost *other* app (skips this process).
+    /// If this app is frontmost, uses the topmost on-screen window from another app.
     static func frontmostWindow() -> AXUIElement? {
-        guard let app = NSWorkspace.shared.frontmostApplication else { return nil }
-        if app.processIdentifier == ProcessInfo.processInfo.processIdentifier {
-            return nil
+        let myPID = ProcessInfo.processInfo.processIdentifier
+
+        if let app = NSWorkspace.shared.frontmostApplication,
+           app.processIdentifier != myPID,
+           let window = focusedWindow(ofPID: app.processIdentifier) ?? firstWindow(ofPID: app.processIdentifier) {
+            return window
         }
 
-        let appElement = AXUIElementCreateApplication(app.processIdentifier)
-        var focused: CFTypeRef?
-        let err = AXUIElementCopyAttributeValue(
-            appElement,
-            kAXFocusedWindowAttribute as CFString,
-            &focused
-        )
-        if err == .success, let focused, CFGetTypeID(focused) == AXUIElementGetTypeID() {
-            return (focused as! AXUIElement)
-        }
+        return frontmostForeignWindowFromWindowList(excluding: myPID)
+    }
 
-        // Fallback: first window
-        var windowsRef: CFTypeRef?
-        let winErr = AXUIElementCopyAttributeValue(
-            appElement,
-            kAXWindowsAttribute as CFString,
-            &windowsRef
-        )
-        if winErr == .success, let list = windowsRef as? [AXUIElement], let first = list.first {
-            return first
-        }
-        return nil
+    static func windowKey(of window: AXUIElement) -> WindowKey? {
+        var pid: pid_t = 0
+        guard AXUIElementGetPid(window, &pid) == .success else { return nil }
+        // AXWindowNumber is missing on some apps — fall back to 0 so clamp memory still works per-process.
+        let number = windowNumber(of: window) ?? 0
+        return WindowKey(pid: pid, windowNumber: number)
     }
 
     static func frame(of window: AXUIElement) -> CGRect? {
@@ -60,9 +54,84 @@ enum WindowAccessor {
         // and for apps that clamp an intermediate frame.
         _ = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeRef)
         _ = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posRef)
-        _ = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeRef)
-        _ = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posRef)
-        return true
+        let sizeErr = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeRef)
+        let posErr = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posRef)
+        return sizeErr == .success && posErr == .success
+    }
+
+    // MARK: - Private
+
+    private static func focusedWindow(ofPID pid: pid_t) -> AXUIElement? {
+        let appElement = AXUIElementCreateApplication(pid)
+        var focused: CFTypeRef?
+        let err = AXUIElementCopyAttributeValue(
+            appElement,
+            kAXFocusedWindowAttribute as CFString,
+            &focused
+        )
+        if err == .success, let focused, CFGetTypeID(focused) == AXUIElementGetTypeID() {
+            return (focused as! AXUIElement)
+        }
+        return nil
+    }
+
+    private static func firstWindow(ofPID pid: pid_t) -> AXUIElement? {
+        let appElement = AXUIElementCreateApplication(pid)
+        var windowsRef: CFTypeRef?
+        let winErr = AXUIElementCopyAttributeValue(
+            appElement,
+            kAXWindowsAttribute as CFString,
+            &windowsRef
+        )
+        if winErr == .success, let list = windowsRef as? [AXUIElement], let first = list.first {
+            return first
+        }
+        return nil
+    }
+
+    private static func frontmostForeignWindowFromWindowList(excluding myPID: pid_t) -> AXUIElement? {
+        guard let info = CGWindowListCopyWindowInfo(
+            [.optionOnScreenOnly, .excludeDesktopElements],
+            kCGNullWindowID
+        ) as? [[String: Any]] else {
+            return nil
+        }
+
+        for entry in info {
+            guard let layer = entry[kCGWindowLayer as String] as? Int, layer == 0,
+                  let ownerPID = entry[kCGWindowOwnerPID as String] as? pid_t,
+                  ownerPID != myPID,
+                  let windowID = entry[kCGWindowNumber as String] as? NSNumber else {
+                continue
+            }
+            if let window = window(ofPID: ownerPID, number: CGWindowID(windowID.uint32Value)) {
+                return window
+            }
+        }
+        return nil
+    }
+
+    private static func window(ofPID pid: pid_t, number: CGWindowID) -> AXUIElement? {
+        let appElement = AXUIElementCreateApplication(pid)
+        var windowsRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            appElement,
+            kAXWindowsAttribute as CFString,
+            &windowsRef
+        ) == .success,
+              let list = windowsRef as? [AXUIElement] else {
+            return nil
+        }
+        return list.first { windowNumber(of: $0) == number }
+    }
+
+    private static func windowNumber(of window: AXUIElement) -> CGWindowID? {
+        var ref: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(window, axWindowNumberAttribute, &ref) == .success,
+              let number = ref as? NSNumber else {
+            return nil
+        }
+        return CGWindowID(number.uint32Value)
     }
 
     private static func copyPoint(_ element: AXUIElement, _ attribute: CFString) -> CGPoint? {
@@ -88,4 +157,9 @@ enum WindowAccessor {
         guard AXValueGetValue(value as! AXValue, .cgSize, &size) else { return nil }
         return size
     }
+}
+
+struct WindowKey: Hashable {
+    let pid: pid_t
+    let windowNumber: CGWindowID
 }

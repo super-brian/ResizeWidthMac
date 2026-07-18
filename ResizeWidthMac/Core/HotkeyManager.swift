@@ -46,7 +46,7 @@ final class HotkeyManager {
         unregisterAll()
         installHandler()
 
-        // Shift+Control+Up / Down
+        // Shift+Control+Up — full → 50% → ⅓; Down — bottom 50% → 75% → ⅓
         register(id: .verticalUp, keyCode: UInt32(kVK_UpArrow), modifiers: UInt32(shiftKey | controlKey))
         register(id: .verticalDown, keyCode: UInt32(kVK_DownArrow), modifiers: UInt32(shiftKey | controlKey))
         // Option+Command+Left / Right — cycle left/right width 50% → 75% → 33%
@@ -55,10 +55,10 @@ final class HotkeyManager {
         // Shift+Option+Command+Right / Left — span across displays
         register(id: .spanRight, keyCode: UInt32(kVK_RightArrow), modifiers: UInt32(shiftKey | optionKey | cmdKey))
         register(id: .spanLeft, keyCode: UInt32(kVK_LeftArrow), modifiers: UInt32(shiftKey | optionKey | cmdKey))
-        // Shift+Option+Command+Up / Down — span twin display at top/bottom half
+        // Shift+Option+Command+Up / Down — twin span top/bottom; cycle 50% → 75% → ⅓
         register(id: .spanHalfUp, keyCode: UInt32(kVK_UpArrow), modifiers: UInt32(shiftKey | optionKey | cmdKey))
         register(id: .spanHalfDown, keyCode: UInt32(kVK_DownArrow), modifiers: UInt32(shiftKey | optionKey | cmdKey))
-        // Shift+Control+Right / Left — move window to adjacent display (Windows Win+Shift+Arrow)
+        // Shift+Control+Right / Left — cycle window across displays (arrangement order, wraps)
         register(id: .moveDisplayRight, keyCode: UInt32(kVK_RightArrow), modifiers: UInt32(shiftKey | controlKey))
         register(id: .moveDisplayLeft, keyCode: UInt32(kVK_LeftArrow), modifiers: UInt32(shiftKey | controlKey))
     }

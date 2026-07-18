@@ -5,7 +5,7 @@ enum ScreenGeometry {
     /// Displays count as neighbors for span only if edges are nearly flush.
     private static let maxSpanGap: CGFloat = 48
     /// Twin neighbor must match width/height within this many points.
-    private static let maxHeightDelta: CGFloat = 32
+    private static let maxTwinSizeDelta: CGFloat = 32
 
     /// Primary display's Cocoa maxY — used to flip between AX (top-left) and Cocoa (bottom-left).
     static var desktopTopY: CGFloat {
@@ -107,10 +107,6 @@ enum ScreenGeometry {
         return (minY, max(0, maxY - minY))
     }
 
-    static func maximizeRect(on screen: NSScreen) -> CGRect {
-        workFrame(on: screen)
-    }
-
     static func isApproximatelyEqual(_ a: CGRect, _ b: CGRect, tolerance: CGFloat = tolerance) -> Bool {
         abs(a.origin.x - b.origin.x) <= tolerance
             && abs(a.origin.y - b.origin.y) <= tolerance
@@ -147,18 +143,8 @@ enum ScreenGeometry {
         return ordered[nextIndex]
     }
 
-    /// Any adjacent screen on that side (used for move-between-displays).
-    static func adjacentScreen(to home: NSScreen, extendRight: Bool) -> NSScreen? {
-        bestAdjacent(to: home, extendRight: extendRight, matchMode: .any)
-    }
-
     /// Twin neighbor for span: same size, same orientation, shared edge >95%.
     /// Skips e.g. a landscape laptop beside two matched portrait monitors.
-    static func adjacentMatchingScreen(to home: NSScreen, extendRight: Bool) -> NSScreen? {
-        adjacentTwinScreen(to: home, extendRight: extendRight)
-    }
-
-    /// Twin neighbor: same size, same orientation, flush edge sharing >95% of the edge.
     static func adjacentTwinScreen(to home: NSScreen, extendRight: Bool) -> NSScreen? {
         bestAdjacent(to: home, extendRight: extendRight, matchMode: .twin)
     }
@@ -183,8 +169,6 @@ enum ScreenGeometry {
     }
 
     private enum AdjacentMatchMode {
-        /// Any neighbor on that side.
-        case any
         /// Same size, same orientation, shared edge >95%.
         case twin
     }
@@ -225,13 +209,11 @@ enum ScreenGeometry {
             )
 
             switch matchMode {
-            case .any:
-                break
             case .twin:
-                if abs(candidate.width - current.width) > maxHeightDelta {
+                if abs(candidate.width - current.width) > maxTwinSizeDelta {
                     continue
                 }
-                if abs(candidate.height - current.height) > maxHeightDelta {
+                if abs(candidate.height - current.height) > maxTwinSizeDelta {
                     continue
                 }
                 let homeLandscape = current.width >= current.height
@@ -270,7 +252,7 @@ enum ScreenGeometry {
         return Int(max(0, end - start))
     }
 
-    /// Fallback when this process has no normal app menu (LSUIElement / MenuBarExtra).
+    /// Minimum top clearance when menu metrics are unavailable.
     private static let minMenuBarClearance: CGFloat = 25
 
     private static func menuBarThickness() -> CGFloat {

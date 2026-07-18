@@ -5,14 +5,16 @@ import ApplicationServices
 @MainActor
 final class PermissionState: ObservableObject {
     @Published var isTrusted = false
+    @Published var applicationsLaunchWarning: String?
 
     func refresh() {
         let trusted = AXIsProcessTrusted()
         if trusted != isTrusted {
             isTrusted = trusted
-        } else {
-            objectWillChange.send()
-            isTrusted = trusted
+        }
+        let warning = ApplicationsLaunch.userFacingWarning
+        if warning != applicationsLaunchWarning {
+            applicationsLaunchWarning = warning
         }
     }
 
@@ -35,14 +37,14 @@ struct PreferencesView: View {
     @State private var loginNeedsApproval = LaunchAtLogin.requiresApproval
 
     private let shortcuts: [(keys: String, meaning: String)] = [
-        ("⇧⌃↑", "Full ↔ top ½"),
-        ("⇧⌃↓", "Bottom ½"),
-        ("⌥⌘←", "Left 50% → 75% → 33% → …"),
-        ("⌥⌘→", "Right 50% → 75% → 33% → …"),
-        ("⇧⌥⌘→", "Span into matching twin on the right (full height)"),
-        ("⇧⌥⌘←", "Span into matching twin on the left (full height)"),
-        ("⇧⌥⌘↑", "Span into matching twin (top ½)"),
-        ("⇧⌥⌘↓", "Span into matching twin (bottom ½)"),
+        ("⇧⌃↑", "Full → 50% → ⅓ → …"),
+        ("⇧⌃↓", "Bottom 50% → 75% → ⅓ → …"),
+        ("⌥⌘←", "Left 50% → 75% → ⅓ → …"),
+        ("⌥⌘→", "Right 50% → 75% → ⅓ → …"),
+        ("⇧⌥⌘→", "Twin span right; again → 80% of right"),
+        ("⇧⌥⌘←", "Twin span left; again → 50% of left"),
+        ("⇧⌥⌘↑", "Twin span top 50% → 75% → ⅓ → …"),
+        ("⇧⌥⌘↓", "Twin span bottom 50% → 75% → ⅓ → …"),
         ("⇧⌃→", "Cycle window to the next display"),
         ("⇧⌃←", "Cycle window to the previous display"),
     ]
@@ -55,6 +57,13 @@ struct PreferencesView: View {
                 Text("Snap and span the frontmost window.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
+            }
+
+            if let warning = permissionState.applicationsLaunchWarning {
+                Text(warning)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -130,14 +139,14 @@ struct PreferencesView: View {
             }
 
             if !permissionState.isTrusted {
-                Text("Still orange after enabling? Remove ResizeWidthMac with − in Accessibility, Clean Build Folder, Run, then toggle ON. Turn Spectacle off.")
+                Text("Still orange after enabling? Remove ResizeWidthMac with − in Accessibility, rebuild, then toggle ON. Disable other window managers that use the same shortcuts.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(20)
-        .frame(width: 380, alignment: .topLeading)
+        .frame(width: 400, alignment: .topLeading)
         .onAppear {
             permissionState.refresh()
             refreshLoginState()
@@ -147,12 +156,16 @@ struct PreferencesView: View {
             refreshLoginState()
         }
         .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { _ in
-            permissionState.refresh()
+            // Poll only while waiting for Accessibility approval.
+            if !permissionState.isTrusted {
+                permissionState.refresh()
+            }
         }
     }
 
     private func refreshLoginState() {
         openAtLogin = LaunchAtLogin.isEnabled
         loginNeedsApproval = LaunchAtLogin.requiresApproval
+        permissionState.refresh()
     }
 }
